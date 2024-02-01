@@ -1,1 +1,4 @@
 build/
+__pycache__/
+scalable.egg-info/
+scalable/__pycache__/
