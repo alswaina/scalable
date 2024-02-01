@@ -1,5 +1,4 @@
 # flake8: noqa
-from . import config
 from .core import JobQueueCluster
 from .slurm import SlurmCluster
 

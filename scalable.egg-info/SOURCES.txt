@@ -1,0 +1,16 @@
+LICENSE
+setup.cfg
+setup.py
+versioneer.py
+scalable/__init__.py
+scalable/_version.py
+scalable/core.py
+scalable/slurm.py
+scalable/support.py
+scalable/utilities.py
+scalable.egg-info/PKG-INFO
+scalable.egg-info/SOURCES.txt
+scalable.egg-info/dependency_links.txt
+scalable.egg-info/not-zip-safe
+scalable.egg-info/requires.txt
+scalable.egg-info/top_level.txt
