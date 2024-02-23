@@ -1,23 +1,19 @@
 from contextlib import contextmanager, suppress
 import logging
-import math
 import os
 import re
 import shlex
-import asyncio
 import sys
 import abc
 import tempfile
 import copy
 import warnings
 
-import dask
 
-from dask.utils import format_bytes, parse_bytes, tmpfile
+from dask.utils import parse_bytes
 
 from distributed.core import Status
 from distributed.deploy.spec import ProcessInterface, SpecCluster
-from distributed.deploy.local import nprocesses_nthreads
 from distributed.scheduler import Scheduler
 from distributed.security import Security
 
