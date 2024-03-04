@@ -369,19 +369,18 @@ class Job(ProcessInterface, abc.ABC):
         )
 
         proc = await get_cmd_comm(port=port)
+        if proc.returncode is not None:
+            raise RuntimeError(
+                "Communicator exited prematurely.\n"
+                "Exit code: {}\n"
+                "Command:\n{}\n"
+                "stdout:\n{}\n"
+                "stderr:\n{}\n".format(proc.returncode, cmd_str, proc.stdout, proc.stderr)
+            )
         send = bytes(cmd_str, encoding='utf-8')
         out, _ = await proc.communicate(input=send)
         out = out.decode()
         out = out.strip()
-
-        if proc.returncode != 0:
-            raise RuntimeError(
-                "Command exited with non-zero exit code.\n"
-                "Exit code: {}\n"
-                "Command:\n{}\n"
-                "stdout:\n{}\n"
-                "stderr:\n{}\n".format(proc.returncode, cmd_str, out)
-            )
         return out
 
 

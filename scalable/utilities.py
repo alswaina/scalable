@@ -3,6 +3,9 @@ import yaml
 import os
 import asyncio
 from dask.utils import parse_bytes
+import re
+
+comm_port_regex = r'0\.0\.0\.0:(\d{1,5})'
 
 def send_command(command, port, communicator_path=None):
     if communicator_path is None:
@@ -15,10 +18,7 @@ def send_command(command, port, communicator_path=None):
     communicator_command.append("-c")
     communicator_command.append(str(port))
     command += "\n"
-    process = subprocess.Popen(args=communicator_command,  
-                               stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    # WITH CURRENT DESIGN, EVERYTHING GOES TO STDOUT EVEN IF AN ERROR WAS
-    # THROWN ON THE OTHER END, ERROR WILL BE RETURNED BUT ALSO ON STDOUT
+    process = subprocess.Popen(args=communicator_command, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     input = bytes(command, encoding='utf-8')
     out, _ = process.communicate(input=input)
     result = str(out, encoding='utf-8')
@@ -36,13 +36,26 @@ async def get_cmd_comm(port, communicator_path=None):
     communicator_command.append("-c")
     communicator_command.append(str(port))
     proc = await asyncio.create_subprocess_exec(
-            *communicator_command,
-            stdin=asyncio.subprocess.PIPE,
-            stdout=asyncio.subprocess.PIPE,
-        )
+        *communicator_command,
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+    )
     return proc
-    
 
+def get_comm_port(logpath=None):
+    if logpath is None:
+        logpath = "./communicator.log"
+    ret = -1
+    with open(logpath, 'r') as file:
+        for line in file:
+            match = re.search(comm_port_regex, line)
+            if match:
+                port = int(match.group(1))
+                if 0 <= port <= 65535:
+                    ret = port
+                    break
+    return ret
+        
 def make_resource_dict():
     if not os.path.isfile('resource_list.yaml'):
         open('resource_list.yaml', 'a').close()
@@ -276,8 +289,3 @@ class Container:
     @staticmethod
     def set_runtime_directive(runtime, directive):
         Container._runtime_directives[runtime] = directive
-
-    
-
-    
-
