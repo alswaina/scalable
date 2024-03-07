@@ -20,7 +20,7 @@ from distributed.security import Security
 from .utilities import *
 from .support import *
 
-logger = logging.getLogger(__name__)
+from .common import logger
 
 DEFAULT_WORKER_COMMAND = "distributed.cli.dask_worker"
 
@@ -422,6 +422,7 @@ class JobQueueCluster(SpecCluster):
         interface=None,
         protocol=None,
         # Job keywords
+        path_overwrite=True,
         **job_kwargs
     ):
         self.status = Status.created
@@ -469,7 +470,8 @@ class JobQueueCluster(SpecCluster):
                     "In order to use TLS without pregenerated certificates `cryptography` is required,"
                     "please install it using either pip or conda"
                 )
-
+            
+        self.model_configs = ModelConfig(path_overwrite=path_overwrite)
         default_scheduler_options = {
             "protocol": protocol,
             "dashboard_address": ":8787",

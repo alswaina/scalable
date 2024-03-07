@@ -13,7 +13,7 @@ from .support import *
 
 from .utilities import *
 
-logger = logging.getLogger(__name__)
+from .common import logger
 
 DEFAULT_REQUEST_QUANTITY = 1
 
@@ -203,6 +203,7 @@ class SlurmCluster(JobQueueCluster):
         # Job keywords
         containers=None,
         comm_port=None,
+        path_overwrite=True,
         **job_kwargs
     ):
         if comm_port is None:
@@ -237,6 +238,7 @@ class SlurmCluster(JobQueueCluster):
             account=account,
             queue=queue,
             hardware=self.hardware,
+            path_overwrite=path_overwrite,
             comm_port=comm_port,
             shared_lock=self.shared_lock,
             walltime=walltime,
@@ -269,10 +271,16 @@ class SlurmCluster(JobQueueCluster):
         if self.asynchronous:
             return NoOpAwaitable() 
 
-    def add_container(self, tag, cpus, memory, path, dirs):
-        self.containers[tag] = Container(name=tag, cpus=cpus, memory=memory, \
-                                         path=path, directories=dirs)
-        return True
+    def add_container(self, tag, dirs, path=None, cpus=None, memory=None):
+        tag = tag.lower()
+        self.model_configs.update_dict(tag, 'Dirs', dirs)
+        if path:
+            self.model_configs.update_dict(tag, 'Path', path)
+        if cpus:
+            self.model_configs.update_dict(tag, 'CPUs', cpus)
+        if memory:
+            self.model_configs.update_dict(tag, 'Memory', memory)
+        self.containers[tag] = Container(name=tag, spec_dict=self.model_configs.config_dict[tag])
     
     @staticmethod
     def set_default_request_quantity(nodes):

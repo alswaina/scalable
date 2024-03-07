@@ -5,6 +5,8 @@ import asyncio
 from dask.utils import parse_bytes
 import re
 
+from .common import logger
+
 comm_port_regex = r'0\.0\.0\.0:(\d{1,5})'
 
 def send_command(command, port, communicator_path=None):
@@ -55,6 +57,67 @@ def get_comm_port(logpath=None):
                     ret = port
                     break
     return ret
+
+
+class ModelConfig:
+
+    def __init__(self, path=None, path_overwrite=True):
+        # HARDCODING CURRENT DIRECTORY
+        self.config_dict = {}
+        cwd = os.getcwd()
+        if path is None:
+            self.path = os.path.abspath(os.path.join(cwd, "scalable", "config_dict.yaml"))
+        dockerfile_path = os.path.abspath(os.path.join(cwd, "scalable", "Dockerfile"))
+        list_avial_command =f"sed -n 's/^FROM[[:space:]]\+[^ ]\+[[:space:]]\+AS[[:space:]]\+\([^ ]\+\)$/\\1/p' {dockerfile_path}"
+        result = subprocess.run(list_avial_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        if result.returncode == 0:
+            avail_containers = result.stdout.decode('utf-8').split('\n')
+            avail_containers = result.stdout.decode('utf-8').split('\n')
+            try:
+                avail_containers.remove("build_env")
+            except ValueError:
+                pass
+            avail_containers = list(filter(bool, avail_containers))
+        else:
+            logger.error("Failed to run sed command...manual entry of container info may be required")
+            return
+        if not os.path.exists(self.path):
+            logger.warn("No resource dict found...making one")
+            path_overwrite = True
+            for container in avail_containers:
+                self.config_dict[container] = ModelConfig.default_spec()
+        else:
+            with open(self.path, 'r') as config_dict:
+                self.config_dict = yaml.safe_load(config_dict)
+        if path_overwrite:
+            for container in avail_containers:
+                container_path = os.path.abspath(os.path.join(cwd, "containers", f"{container}_container.sif"))
+                if not os.path.exists(container_path):
+                    container_path = ""
+                self.config_dict[container]['Path'] = container_path
+            with open(self.path, 'w') as config:
+                yaml.dump(self.config_dict, config)
+            
+
+    def update_dict(self, tag, key, value):
+        try:
+            self.config_dict[tag][key] = value
+            with open(self.path, 'w') as config:
+                yaml.dump(self.config_dict, config)
+        except KeyError:
+            msg = f"The given key {key} is not in the dictionary. The available keys are \
+            {list(self.config_dict.keys())}"
+            logger.error(msg)
+            logger.error("Please try again")
+
+    @staticmethod
+    def default_spec():
+        config = {}
+        config['CPUs'] = 4
+        config['Memory'] = "8G"
+        return config
+            
+
         
 def make_resource_dict():
     if not os.path.isfile('resource_list.yaml'):
@@ -238,6 +301,17 @@ class Container:
         if  directories is None:
             directories = {}
         self.directories = directories
+    
+    def __init__(self, name, spec_dict):
+        self.name = name
+        self.cpus = spec_dict['CPUs']
+        memory_parsed = parse_bytes(spec_dict['Memory'])
+        memory_parsed //= 10**9
+        self.memory = memory_parsed
+        self.path = spec_dict['Path']
+        if spec_dict['Dirs'] is None:
+            spec_dict['Dirs'] = {}
+        self.directories = spec_dict['Dirs']
 
     def add_directory(self, src, dst=None):
         if dst is None:
