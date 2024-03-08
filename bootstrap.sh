@@ -165,7 +165,7 @@ do
         export APPTAINER_TMPDIR=$APPTAINER_TMPDIR &&
         export APPTAINER_CACHEDIR=$APPTAINER_TMPDIR &&
         cd $work_dir/containers && 
-        apptainer --force build $target\_container.sif docker-archive:$target\_container.tar
+        apptainer build --force $target\_container.sif docker-archive:$target\_container.tar
     }"
     check_exit_code $?
 done
