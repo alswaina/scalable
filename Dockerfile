@@ -41,9 +41,10 @@ RUN python3 /tethys/install_script.py
 
 FROM build_env AS xanthos
 RUN apt-get -y update && apt -y upgrade
-RUN git clone https://github.com/JGCRI/xanthos.git
-RUN cd xanthos && sed -i 's/numpy~=/numpy>=/g' setup.py 
-RUN pip install xanthos
+RUN mkdir /xanthos
+RUN git clone --depth 1 https://github.com/JGCRI/xanthos.git /xanthos
+RUN cd /xanthos && sed -i 's/numpy~=/numpy>=/g' setup.py 
+RUN pip install /xanthos
 RUN echo "import xanthos" >> /xanthos/install_script.py && \
 echo "xanthos.get_package_data(\"/xanthos\")" >> /xanthos/install_script.py
 RUN python3 /xanthos/install_script.py
