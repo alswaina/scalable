@@ -12,7 +12,7 @@ python3 python3-pip python3-numpy libboost-python1.74 libboost-numpy1.74 openjdk
 RUN python3 -m pip install dask[complete] dask-jobqueue --upgrade dask_mpi pyyaml
 
 FROM build_env AS scalable
-RUN git clone https://github.com/JGCRI/scalable.git /scalable
+RUN git clone https://github.com/alswaina/scalable.git /scalable
 RUN pip3 install /scalable/.
 
 FROM build_env AS demeter
@@ -56,12 +56,12 @@ RUN python3 -m pip install pyhector
 FROM build_env AS gcam
 RUN apt-get -y update && apt -y upgrade
 ARG EIGEN_VERSION=3.4.0
-RUN git clone --depth 1 --branch gcam-v7.0 https://github.com/JGCRI/gcam-core.git /gcam-core
+RUN git clone --depth 1 --branch base-ksa7 https://github.com/KAPSARC/gcam-ksa-dev.git /gcam-core
 RUN mkdir gcam-core/libs
 RUN wget https://gitlab.com/libeigen/eigen/-/archive/${EIGEN_VERSION}/eigen-${EIGEN_VERSION}.tar.gz -P /gcam-core/libs/.
 RUN cd /gcam-core/libs && tar -xvf eigen-${EIGEN_VERSION}.tar.gz && mv eigen-${EIGEN_VERSION} eigen
 ARG JARS_LINK=https://github.com/JGCRI/modelinterface/releases/download/v5.4/jars.zip
-RUN wget ${JARS_LINK} -P /gcam-core && unzip /gcam-core/jars.zip && rm /gcam-core/jars.zip
+RUN wget ${JARS_LINK} -P /gcam-core && unzip /gcam-core/jars.zip -d /gcam-core && rm /gcam-core/jars.zip
 ENV CXX='g++ -fPIC' \
     EIGEN_INCLUDE=/gcam-core/libs/eigen \
     BOOST_INCLUDE=/usr/include \
@@ -75,7 +75,7 @@ ENV CXX='g++ -fPIC' \
 RUN cd /gcam-core && git submodule init cvs/objects/climate/source/hector && \
 git submodule update cvs/objects/climate/source/hector
 RUN cd /gcam-core && make install_hector
-RUN cd /gcam-core/cvs/objects/build/linux && make -j 4 gcam
+RUN cd /gcam-core/cvs/objects/build/linux && make -j 16 gcam
 RUN cp /gcam-core/exe/gcam.exe /usr/local/bin/gcam
 RUN apt-get -y update && apt -y upgrade
 ENV GCAM_INCLUDE=/gcam-core/cvs/objects \
